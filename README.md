@@ -39,6 +39,9 @@
 - Docker y Docker Compose instalados
 - Cuenta en Cloudflare con acceso a Zero Trust (para túnel)
 - Dominio configurado en Cloudflare
+- rclone configurado con Google Drive (para backups)
+
+> 📘 **Compatible con LXC/Proxmox**: Los scripts detectan automáticamente si se ejecutan como root.
 
 ### 1. Clonar el repositorio
 

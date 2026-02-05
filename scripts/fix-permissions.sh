@@ -20,6 +20,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Detectar si ya somos root (LXC, Docker, etc.)
+if [[ $EUID -eq 0 ]]; then
+    SUDO_CMD=""
+else
+    SUDO_CMD="sudo"
+fi
+
 # ─────────────────────────────────────────────────────────────────────
 # Funciones
 # ─────────────────────────────────────────────────────────────────────
@@ -56,7 +63,7 @@ fi
 # n8n corre como usuario 'node' (UID 1000)
 if [[ -d "${PROJECT_DIR}/n8n_data" ]]; then
     log_info "Configurando n8n_data → UID 1000 (node)"
-    sudo chown -R 1000:1000 "${PROJECT_DIR}/n8n_data"
+    $SUDO_CMD chown -R 1000:1000 "${PROJECT_DIR}/n8n_data"
 else
     log_warn "Carpeta n8n_data no encontrada, omitiendo..."
 fi
@@ -64,7 +71,7 @@ fi
 # PostgreSQL Alpine corre como usuario 'postgres' (UID 70)
 if [[ -d "${PROJECT_DIR}/postgres_data" ]]; then
     log_info "Configurando postgres_data → UID 70 (postgres)"
-    sudo chown -R 70:70 "${PROJECT_DIR}/postgres_data"
+    $SUDO_CMD chown -R 70:70 "${PROJECT_DIR}/postgres_data"
 else
     log_warn "Carpeta postgres_data no encontrada, omitiendo..."
 fi
