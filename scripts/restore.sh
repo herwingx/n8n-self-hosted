@@ -16,7 +16,7 @@ BACKUP_DIR="${PROJECT_DIR}/backups"
 COMPOSE_FILE="${PROJECT_DIR}/docker-compose.yml"
 
 # Rclone
-RCLONE_REMOTE="drive"
+RCLONE_REMOTE="gdrive"
 RCLONE_FOLDER="N8N"
 
 # Colores

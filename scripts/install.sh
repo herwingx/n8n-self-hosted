@@ -80,20 +80,20 @@ check_dependencies() {
 check_rclone_config() {
     log_info "Verificando configuración de rclone..."
     
-    if ! rclone listremotes | grep -q "^drive:"; then
-        log_error "Remote 'drive' no encontrado en rclone"
+    if ! rclone listremotes | grep -q "^gdrive:"; then
+        log_error "Remote 'gdrive' no encontrado en rclone"
         echo ""
         echo "Configura rclone con:"
         echo "  rclone config"
         echo ""
-        echo "Crea un remote llamado 'drive' para Google Drive"
+        echo "Crea un remote llamado 'gdrive' para Google Drive"
         exit 1
     fi
     
     # Verificar que la carpeta N8N existe o crearla
-    if ! rclone lsd drive:N8N &> /dev/null; then
+    if ! rclone lsd gdrive:N8N &> /dev/null; then
         log_warn "Carpeta N8N no existe en Drive, creándola..."
-        rclone mkdir drive:N8N
+        rclone mkdir gdrive:N8N
     fi
     
     log_info "✅ rclone configurado correctamente"

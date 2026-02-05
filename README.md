@@ -37,11 +37,12 @@
 ### Prerrequisitos
 
 - Docker y Docker Compose instalados
-- Cuenta en Cloudflare con acceso a Zero Trust (para túnel)
+- Cuenta en Cloudflare con acceso a Zero Trust
 - Dominio configurado en Cloudflare
-- rclone configurado con Google Drive (para backups)
 
 > 📘 **Compatible con LXC/Proxmox**: Los scripts detectan automáticamente si se ejecutan como root.
+
+---
 
 ### 1. Clonar el repositorio
 
@@ -50,7 +51,31 @@ git clone https://github.com/herwingx/n8n-self-hosted.git
 cd n8n-self-hosted
 ```
 
-### 2. Configurar variables de entorno
+### 2. Instalar rclone (para backups)
+
+```bash
+# Instalar rclone
+curl https://rclone.org/install.sh | sudo bash
+
+# Configurar rclone con Google Drive
+rclone config
+```
+
+Durante la configuración de rclone:
+1. Seleccionar `n` (new remote)
+2. Nombre: **`gdrive`** ← Este nombre es obligatorio
+3. Storage: `drive` (Google Drive)
+4. Seguir las instrucciones para autenticar con tu cuenta de Google
+5. Verificar con: `rclone lsd gdrive:`
+
+### 3. Configurar Cloudflare Tunnel
+
+1. Ir a [Cloudflare Zero Trust](https://one.dash.cloudflare.com)
+2. Navegar a **Access → Tunnels → Create a tunnel**
+3. Copiar el token del túnel
+4. Configurar el túnel para apuntar a `http://n8n:5678`
+
+### 4. Configurar variables de entorno
 
 ```bash
 # Copiar archivo de ejemplo
@@ -64,34 +89,35 @@ openssl rand -hex 32
 nano .env
 ```
 
-### 3. Configurar Cloudflare Tunnel
+Variables a configurar en `.env`:
+- `N8N_HOST`: tu dominio (ej: `n8n.tudominio.com`)
+- `WEBHOOK_URL`: URL completa con https
+- `N8N_ENCRYPTION_KEY`: la clave generada
+- `CF_TUNNEL_TOKEN`: token del túnel de Cloudflare
+- `DB_PASSWORD`: contraseña segura para PostgreSQL
 
-1. Ir a [Cloudflare Zero Trust](https://one.dash.cloudflare.com)
-2. Navegar a **Access → Tunnels → Create a tunnel**
-3. Copiar el token del túnel en `CF_TUNNEL_TOKEN`
-4. Configurar el túnel para apuntar a `http://n8n:5678`
+### 5. Ejecutar instalación
 
-### 4. Iniciar servicios (primera vez)
+```bash
+# Hacer scripts ejecutables y configurar cron de backups
+./scripts/install.sh
+```
+
+### 6. Iniciar servicios
 
 ```bash
 docker compose up -d
 ```
 
-### 5. Configurar permisos de carpetas
+### 7. Configurar permisos de carpetas
 
 > ⚠️ Ejecutar después del primer inicio, cuando Docker crea las carpetas.
 
 ```bash
-# Opción 1: Usar el script (recomendado)
 ./scripts/fix-permissions.sh
-
-# Opción 2: Manual
-sudo chown -R 1000:1000 ./n8n_data      # n8n (UID 1000)
-sudo chown -R 70:70 ./postgres_data      # PostgreSQL (UID 70)
-docker compose restart
 ```
 
-### 6. Acceder a n8n
+### 8. Acceder a n8n
 
 Abre `https://n8n.tudominio.com` en tu navegador.
 

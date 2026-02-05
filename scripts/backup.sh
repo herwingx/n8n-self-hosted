@@ -17,7 +17,7 @@ BACKUP_DIR="${PROJECT_DIR}/backups"
 LOG_FILE="${BACKUP_DIR}/backup.log"
 
 # Rclone
-RCLONE_REMOTE="drive"
+RCLONE_REMOTE="gdrive"
 RCLONE_FOLDER="N8N"
 
 # Retención
@@ -35,7 +35,8 @@ log() {
     local message="$2"
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[${timestamp}] [${level}] ${message}" | tee -a "$LOG_FILE"
+    # Escribir a stderr y al archivo de log (no a stdout para no interferir con capturas)
+    echo "[${timestamp}] [${level}] ${message}" | tee -a "$LOG_FILE" >&2
 }
 
 check_dependencies() {
