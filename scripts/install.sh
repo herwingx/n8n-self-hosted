@@ -43,16 +43,6 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-detect_sudo() {
-    # Detectar si ya somos root (LXC, Docker, etc.)
-    if [[ $EUID -eq 0 ]]; then
-        SUDO_CMD=""
-        log_info "Ejecutando como root (LXC/Docker detectado)"
-    else
-        SUDO_CMD="sudo"
-    fi
-}
-
 check_dependencies() {
     log_info "Verificando dependencias..."
     
@@ -196,7 +186,6 @@ show_next_steps() {
 # ─────────────────────────────────────────────────────────────────────
 main() {
     print_header
-    detect_sudo
     check_dependencies
     check_rclone_config
     setup_env
