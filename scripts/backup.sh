@@ -139,11 +139,11 @@ send_notification() {
     local status="$1"
     local message="$2"
     
-    # Aquí puedes agregar notificaciones (Discord, Telegram, etc.)
-    # Ejemplo con curl a un webhook:
-    # curl -X POST -H "Content-Type: application/json" \
-    #   -d "{\"content\": \"$status: $message\"}" \
-    #   "$DISCORD_WEBHOOK_URL"
+    if [[ -n "${DISCORD_WEBHOOK_URL:-}" ]]; then
+        curl -s -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"$status: $message\"}" \
+            "$DISCORD_WEBHOOK_URL" > /dev/null || true
+    fi
     
     log "INFO" "Notificación: [$status] $message"
 }
