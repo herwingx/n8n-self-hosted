@@ -148,14 +148,21 @@ setup_cron() {
     local cron_job="0 3 * * * ${SCRIPT_DIR}/backup.sh >> ${PROJECT_DIR}/backups/cron.log 2>&1"
     local cron_comment="# n8n-backup: Backup diario a las 3:00 AM"
     
+    local current_crontab
+    current_crontab=$(crontab -l 2>/dev/null || true)
+
     # Verificar si ya existe
-    if crontab -l 2>/dev/null | grep -q "n8n-backup"; then
+    if echo "$current_crontab" | grep -q "n8n-backup"; then
         log_warn "Cron job ya existe, omitiendo..."
         return
     fi
     
     # Agregar cron job
-    (crontab -l 2>/dev/null || echo ""; echo "$cron_comment"; echo "$cron_job") | crontab -
+    if [[ -n "$current_crontab" ]]; then
+        (echo "$current_crontab"; echo "$cron_comment"; echo "$cron_job") | crontab -
+    else
+        (echo "$cron_comment"; echo "$cron_job") | crontab -
+    fi
     
     log_info "✅ Backup programado diariamente a las 3:00 AM"
 }
@@ -207,4 +214,6 @@ main() {
 }
 
 # Ejecutar
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
