@@ -185,17 +185,13 @@ docker compose logs -f
 docker compose logs -f n8n
 ```
 
-### 🔄 Actualizar n8n
+### 🔄 Actualizar a la última versión
+
+Hemos incluido un script que hace un backup de seguridad y luego actualiza automáticamente todas las imágenes de Docker, reinicia los servicios y limpia imágenes antiguas para que tu instancia esté siempre en la última versión y no ocupe espacio innecesario.
 
 ```bash
-# Descargar última imagen
-docker compose pull n8n
-
-# Reiniciar con la nueva imagen
-docker compose up -d n8n
-
-# Verificar versión actual
-docker compose exec n8n n8n --version
+# Ejecutar actualización automática
+./scripts/update.sh
 ```
 
 ### 💾 Backup Automático (Google Drive)
@@ -250,7 +246,8 @@ n8n-self-hosted/
 │   ├── install.sh         # Script de instalación inicial
 │   ├── fix-permissions.sh # Configurar permisos de volúmenes
 │   ├── backup.sh          # Backup automático a Google Drive
-│   └── restore.sh         # Restauración desde backups
+│   ├── restore.sh         # Restauración desde backups
+│   └── update.sh          # Actualizar imágenes e instancia
 ├── backups/               # Backups locales (ignorado)
 ├── postgres_data/         # Datos de PostgreSQL (ignorado)
 └── n8n_data/              # Datos de n8n (ignorado)
