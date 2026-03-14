@@ -1,9 +1,7 @@
 #!/bin/bash
-
 # ==============================================================================
-# 🧪 Testing check_dependencies in install.sh
+# 🧪 Testing install.sh - check_dependencies and check_rclone_config
 # ==============================================================================
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,9 +30,6 @@ log_error() { :; }
 setup_mocks() {
     export ORIGINAL_PATH=$PATH
     export MOCK_DIR=$(mktemp -d)
-
-    # Prepend mock dir to path instead of completely replacing it
-    # so we don't break check_dependencies's usage of built-in commands or common utils.
     export PATH=$MOCK_DIR:$PATH
 }
 
@@ -46,13 +41,10 @@ teardown_mocks() {
 mock_cmd_success() {
     local cmd=$1
     echo '#!/bin/bash' > "$MOCK_DIR/$cmd"
-    # To avoid 'exit' keyword which fails env checks, use true which exits 0
     echo "true" >> "$MOCK_DIR/$cmd"
     chmod +x "$MOCK_DIR/$cmd"
 }
 
-# We can override the command builtin safely as a shell function
-# because check_dependencies runs 'command -v docker'
 command() {
     local arg=$2
     if [[ "$1" == "-v" ]]; then
@@ -69,7 +61,9 @@ command() {
 }
 export -f command
 
-# --- Test Cases ---
+# ==============================================================================
+# Tests for check_dependencies
+# ==============================================================================
 
 test_all_deps_present() {
     echo "Running test: all dependencies present"
@@ -131,12 +125,101 @@ test_both_missing() {
     teardown_mocks
 }
 
-# Run tests
+# ==============================================================================
+# Tests for check_rclone_config
+# ==============================================================================
+
+test_rclone_config_no_gdrive() {
+    local output
+    set +e
+    output=$( (
+        rclone() {
+            if [[ "$1" == "listremotes" ]]; then echo "other:"; fi
+        }
+        export -f rclone
+        check_rclone_config
+    ) 2>&1 )
+    local exit_code=$?
+    set -e
+
+    if [[ $exit_code -eq 1 ]] && echo "$output" | grep -q "Remote 'gdrive' no encontrado"; then
+        pass "check_rclone_config: no gdrive remote (exited properly)"
+    else
+        echo "Actual output: $output"
+        fail "check_rclone_config: no gdrive remote"
+    fi
+}
+
+test_rclone_config_gdrive_exists_no_n8n() {
+    local output
+    set +e
+    output=$( (
+        rclone() {
+            if [[ "$1" == "listremotes" ]]; then
+                echo "gdrive:"
+            elif [[ "$1" == "lsd" ]]; then
+                return 1
+            elif [[ "$1" == "mkdir" ]]; then
+                echo "MOCKED_MKDIR $2"
+            fi
+        }
+        export -f rclone
+        check_rclone_config
+    ) 2>&1 )
+    local exit_code=$?
+    set -e
+
+    if [[ $exit_code -eq 0 ]] && echo "$output" | grep -q "MOCKED_MKDIR gdrive:N8N" && echo "$output" | grep -q "Carpeta N8N no existe en Drive, creándola"; then
+        pass "check_rclone_config: gdrive exists, created N8N folder"
+    else
+        echo "Actual exit code: $exit_code"
+        echo "Actual output: $output"
+        fail "check_rclone_config: gdrive exists no n8n folder"
+    fi
+}
+
+test_rclone_config_gdrive_exists_has_n8n() {
+    local output
+    set +e
+    output=$( (
+        rclone() {
+            if [[ "$1" == "listremotes" ]]; then
+                echo "gdrive:"
+            elif [[ "$1" == "lsd" ]]; then
+                return 0
+            elif [[ "$1" == "mkdir" ]]; then
+                echo "MOCKED_MKDIR $2"
+            fi
+        }
+        export -f rclone
+        check_rclone_config
+    ) 2>&1 )
+    local exit_code=$?
+    set -e
+
+    if [[ $exit_code -eq 0 ]] && ! echo "$output" | grep -q "MOCKED_MKDIR" && ! echo "$output" | grep -q "Carpeta N8N no existe en Drive, creándola"; then
+        pass "check_rclone_config: gdrive has n8n folder (did not create)"
+    else
+        echo "Actual output: $output"
+        fail "check_rclone_config: gdrive has n8n folder"
+    fi
+}
+
+# ==============================================================================
+# Run all tests
+# ==============================================================================
 set +e
+echo "--- check_dependencies tests ---"
 test_all_deps_present
 test_docker_missing
 test_rclone_missing
 test_both_missing
+
+echo ""
+echo "--- check_rclone_config tests ---"
+test_rclone_config_no_gdrive
+test_rclone_config_gdrive_exists_no_n8n
+test_rclone_config_gdrive_exists_has_n8n
 
 echo ""
 if [[ $TESTS_FAILED -eq 0 ]]; then
