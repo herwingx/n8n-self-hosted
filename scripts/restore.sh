@@ -11,9 +11,9 @@ set -euo pipefail
 # Configuración
 # ─────────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-BACKUP_DIR="${PROJECT_DIR}/backups"
-COMPOSE_FILE="${PROJECT_DIR}/docker-compose.yml"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
+BACKUP_DIR="${BACKUP_DIR:-${PROJECT_DIR}/backups}"
+COMPOSE_FILE="${COMPOSE_FILE:-${PROJECT_DIR}/docker-compose.yml}"
 
 # Rclone
 RCLONE_REMOTE="gdrive"
