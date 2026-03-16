@@ -1,15 +1,22 @@
 #!/bin/bash
+# Benchmark: compara tiempos de setup_cron "original" vs optimizado.
+# No es un test de corrección; ejecutar solo si interesa el rendimiento.
 
-# Define variables needed
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Variables usadas por el benchmark (cron job apunta a /tmp)
 SCRIPT_DIR="/tmp/scripts"
-PROJECT_DIR="/tmp/project"
+PROJECT_DIR_BENCH="/tmp/project"
 
 echo "Adding mock crontab to use cron files..."
 mkdir -p /tmp/cron
 cat << 'MOCK' > /tmp/crontab_mock
 #!/bin/bash
 if [ "$1" = "-l" ]; then
-    sleep 0.5 # simulate network/system delay
+    sleep 0.5
     if [ -f /tmp/cron/mycron ]; then
         cat /tmp/cron/mycron
     else
@@ -24,13 +31,21 @@ elif [ "$1" = "-" ]; then
 fi
 MOCK
 chmod +x /tmp/crontab_mock
-
 mkdir -p /tmp/bin
 cp /tmp/crontab_mock /tmp/bin/crontab
 export PATH="/tmp/bin:$PATH"
 
+# Cargar install.sh desde el repo (define setup_cron)
+source "${PROJECT_DIR}/scripts/install.sh" >/dev/null 2>&1 || true
+
+log_warn() { :; }
+log_info() { :; }
+
+# Necesitamos PROJECT_DIR y SCRIPT_DIR para setup_cron; usa los del install
+# (install.sh ya tiene PROJECT_DIR y SCRIPT_DIR del repo; setup_cron los usa en la línea del cron)
+# Para el benchmark original usamos rutas /tmp
 setup_cron_original() {
-    local cron_job="0 3 * * * ${SCRIPT_DIR}/backup.sh >> ${PROJECT_DIR}/backups/cron.log 2>&1"
+    local cron_job="0 3 * * * ${SCRIPT_DIR}/backup.sh >> ${PROJECT_DIR_BENCH}/backups/cron.log 2>&1"
     local cron_comment="# n8n-backup: Backup diario a las 3:00 AM"
 
     if crontab -l 2>/dev/null | grep -q "n8n-backup"; then
@@ -39,12 +54,6 @@ setup_cron_original() {
 
     (crontab -l 2>/dev/null || echo ""; echo "$cron_comment"; echo "$cron_job") | crontab -
 }
-
-# We can source install.sh
-source scripts/install.sh >/dev/null 2>&1 || true
-
-log_warn() { :; }
-log_info() { :; }
 
 # Benchmark Original Adding
 echo "Benchmarking Original Adding..."
@@ -69,18 +78,17 @@ echo "Improvement (adding): $((diff_orig_add - diff_opt_add)) ms"
 # Benchmark Original Existing
 echo "Benchmarking Original Existing..."
 crontab -r 2>/dev/null || true
-setup_cron_original # initialize so it exists
+setup_cron_original
 start=$(date +%s%N)
 setup_cron_original
 end=$(date +%s%N)
 diff_orig_exist=$(( (end - start) / 1000000 ))
 echo "Original (existing): ${diff_orig_exist} ms"
 
-
 # Benchmark Optimized Existing
 echo "Benchmarking Optimized Existing..."
 crontab -r 2>/dev/null || true
-setup_cron # initialize so it exists
+setup_cron
 start=$(date +%s%N)
 setup_cron
 end=$(date +%s%N)

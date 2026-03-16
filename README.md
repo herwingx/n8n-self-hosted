@@ -185,14 +185,20 @@ docker compose logs -f
 docker compose logs -f n8n
 ```
 
-### 🔄 Actualizar a la última versión
+### 🔄 Actualizar n8n (si ya está instalado)
 
-Hemos incluido un script que hace un backup de seguridad y luego actualiza automáticamente todas las imágenes de Docker, reinicia los servicios y limpia imágenes antiguas para que tu instancia esté siempre en la última versión y no ocupe espacio innecesario.
+Si ya tienes la instancia en marcha y quieres **pasarla a la última versión**:
+
+1. Ve al directorio del proyecto (donde está `docker-compose.yml`).
+2. Ejecuta el script de actualización (hace un backup, descarga la nueva imagen, recrea contenedores y limpia imágenes antiguas):
 
 ```bash
-# Ejecutar actualización automática
 ./scripts/update.sh
 ```
+
+Ese script hace: **backup** (base de datos y datos de n8n) → **`docker compose pull`** → **`docker compose up -d`** → **`docker image prune -f`**. El proyecto usa la imagen `n8nio/n8n:latest`, así que obtienes la última versión publicada en Docker Hub.
+
+Si prefieres **fijar una versión concreta** (por ejemplo en producción), edita `docker-compose.yml` y cambia la imagen a algo como `n8nio/n8n:1.52.0` (revisa [tags en Docker Hub](https://hub.docker.com/r/n8nio/n8n/tags)).
 
 ### 💾 Backup Automático (Google Drive)
 
@@ -248,10 +254,27 @@ n8n-self-hosted/
 │   ├── backup.sh          # Backup automático a Google Drive
 │   ├── restore.sh         # Restauración desde backups
 │   └── update.sh          # Actualizar imágenes e instancia
+├── tests/                  # Tests de scripts (ver tests/README.md)
 ├── backups/               # Backups locales (ignorado)
 ├── postgres_data/         # Datos de PostgreSQL (ignorado)
 └── n8n_data/              # Datos de n8n (ignorado)
 ```
+
+### Ejecutar tests
+
+Los tests validan las funciones de los scripts (backup, restore, install) con mocks, sin tocar Docker ni rclone real. Para ejecutarlos:
+
+```bash
+# Todos los tests
+./tests/run_all_tests.sh
+
+# O uno por uno, por ejemplo:
+./tests/test_backup_database.sh
+./tests/test_restore_database.sh
+./tests/test_install.sh
+```
+
+En **`tests/README.md`** está documentado qué hace cada test, qué valida exactamente (casos de prueba) y cómo ejecutarlos.
 
 ---
 
