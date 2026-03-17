@@ -128,6 +128,7 @@ make_scripts_executable() {
     
     chmod +x "${SCRIPT_DIR}/backup.sh"
     chmod +x "${SCRIPT_DIR}/restore.sh" 2>/dev/null || true
+    chmod +x "${SCRIPT_DIR}/update.sh" 2>/dev/null || true
     
     log_info "✅ Scripts configurados"
 }
@@ -157,6 +158,30 @@ setup_cron() {
     log_info "✅ Backup programado diariamente a las 3:00 AM"
 }
 
+setup_cron_update() {
+    log_info "Configurando actualización automática de n8n..."
+    
+    # Actualización semanal: domingos a las 4:00 AM (después del backup de las 3:00)
+    local cron_job="0 4 * * 0 cd ${PROJECT_DIR} && ${SCRIPT_DIR}/update.sh >> ${PROJECT_DIR}/backups/cron.log 2>&1"
+    local cron_comment="# n8n-update: Actualización semanal (domingos 4:00 AM)"
+    
+    local current_crontab
+    current_crontab=$(crontab -l 2>/dev/null || true)
+
+    if echo "$current_crontab" | grep -q "n8n-update"; then
+        log_warn "Cron de actualización ya existe, omitiendo..."
+        return
+    fi
+    
+    if [[ -n "$current_crontab" ]]; then
+        (echo "$current_crontab"; echo "$cron_comment"; echo "$cron_job") | crontab -
+    else
+        (echo "$cron_comment"; echo "$cron_job") | crontab -
+    fi
+    
+    log_info "✅ Actualización programada semanalmente (domingos 4:00 AM)"
+}
+
 show_next_steps() {
     echo ""
     echo -e "${BLUE}══════════════════════════════════════════════════════════════════════${NC}"
@@ -183,6 +208,9 @@ show_next_steps() {
     echo "  - Ver logs de backup:"
     echo -e "    ${YELLOW}tail -f ${PROJECT_DIR}/backups/backup.log${NC}"
     echo ""
+    echo "  - Actualizar n8n manualmente:"
+    echo -e "    ${YELLOW}${SCRIPT_DIR}/update.sh${NC}"
+    echo ""
     echo "  - Ver cron jobs:"
     echo -e "    ${YELLOW}crontab -l${NC}"
     echo ""
@@ -199,6 +227,7 @@ main() {
     setup_directories
     make_scripts_executable
     setup_cron
+    setup_cron_update
     show_next_steps
 }
 

@@ -91,10 +91,12 @@ nano .env
 
 Variables a configurar en `.env`:
 - `N8N_HOST`: tu dominio (ej: `n8n.tudominio.com`)
-- `WEBHOOK_URL`: URL completa con https
-- `N8N_ENCRYPTION_KEY`: la clave generada
+- `WEBHOOK_URL`: URL completa con https (ej: `https://n8n.tudominio.com/`)
+- `N8N_ENCRYPTION_KEY`: la clave generada con `openssl rand -hex 32`
 - `CF_TUNNEL_TOKEN`: token del túnel de Cloudflare
 - `DB_PASSWORD`: contraseña segura para PostgreSQL
+
+> ⚠️ Guarda todos los valores en `.env` antes de pasar al paso 5; `install.sh` no sobrescribe un `.env` ya existente.
 
 ### 5. Ejecutar instalación
 
@@ -119,7 +121,24 @@ docker compose up -d
 
 ### 8. Acceder a n8n
 
-Abre `https://n8n.tudominio.com` en tu navegador.
+Abre `https://n8n.tudominio.com` (o la URL que hayas puesto en `N8N_HOST`) en tu navegador.
+
+---
+
+### Checklist de replicación
+
+Para comprobar que todo está listo antes de usar n8n:
+
+- [ ] Docker y Docker Compose instalados
+- [ ] rclone instalado y configurado con remote **`gdrive`** (Google Drive), y probado con `rclone lsd gdrive:`
+- [ ] Túnel creado en Cloudflare Zero Trust, con **Public hostname** → Service **HTTP** → URL **`n8n:5678`**
+- [ ] Archivo `.env` creado desde `.env.example` y rellenado (N8N_HOST, WEBHOOK_URL, N8N_ENCRYPTION_KEY, CF_TUNNEL_TOKEN, DB_PASSWORD)
+- [ ] Ejecutado `./scripts/install.sh`
+- [ ] Ejecutado `docker compose up -d`
+- [ ] Ejecutado `./scripts/fix-permissions.sh` tras el primer arranque
+- [ ] Acceso a n8n en `https://tu-dominio` funcionando
+
+**Replicar en otro servidor:** sigue los mismos pasos 1–8 en la nueva máquina. Si quieres llevar datos de otra instancia, usa los backups en Google Drive (carpeta **N8N**) y restaura con `./scripts/restore.sh`.
 
 ---
 
@@ -200,6 +219,8 @@ Ese script hace: **backup** (base de datos y datos de n8n) → **`docker compose
 
 Si prefieres **fijar una versión concreta** (por ejemplo en producción), edita `docker-compose.yml` y cambia la imagen a algo como `n8nio/n8n:1.52.0` (revisa [tags en Docker Hub](https://hub.docker.com/r/n8nio/n8n/tags)).
 
+**Actualización automática (cron):** si usaste `./scripts/install.sh`, además del backup se programó una **actualización semanal** (domingos a las 4:00 AM). Verás dos entradas con `crontab -l`: `# n8n-backup` y `# n8n-update`. Para cambiar el horario, edita el crontab (`crontab -e`) y modifica la línea que contiene `n8n-update`.
+
 ### 💾 Backup Automático (Google Drive)
 
 Este proyecto incluye un sistema de backup automático a Google Drive usando rclone.
@@ -218,7 +239,7 @@ tail -f backups/backup.log
 ./scripts/restore.sh --list
 ```
 
-> 📘 Los backups se ejecutan automáticamente cada día a las 3:00 AM vía cron.
+> 📘 Los backups se ejecutan automáticamente cada día a las 3:00 AM y la actualización de n8n cada domingo a las 4:00 AM (ambos vía cron, configurados por `install.sh`).
 
 ### 🔧 Mantenimiento
 

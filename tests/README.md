@@ -35,7 +35,7 @@ O un test concreto:
 | `test_restore_database.sh` | `scripts/restore.sh` | `restore_database` |
 | `test_restore.sh` | `scripts/restore.sh` | `download_from_drive` |
 | `test_syntax.sh` | `scripts/install.sh` | Carga del script (sintaxis) |
-| `test_setup_cron_verify.sh` | `scripts/install.sh` | `setup_cron` |
+| `test_setup_cron_verify.sh` | `scripts/install.sh` | `setup_cron`, `setup_cron_update` |
 
 ---
 
@@ -67,11 +67,13 @@ O un test concreto:
 - Comprueba que `scripts/install.sh` se puede cargar con `source` sin errores de sintaxis.
 
 ### `test_setup_cron_verify.sh`
-- **setup_cron**: (1) Crontab vacío → añade la línea de backup n8n; (2) Si ya existe la entrada n8n-backup → no duplica; (3) Si hay otros jobs → los mantiene y añade el de n8n. Usa un crontab mock en `/tmp` para no tocar el crontab real.
+- **setup_cron**: (1) Crontab vacío → añade la línea de backup n8n; (2) Si ya existe la entrada n8n-backup → no duplica; (3) Si hay otros jobs → los mantiene y añade el de n8n.
+- **setup_cron_update**: (4) Añade la entrada n8n-update (actualización semanal) y no duplica; (5) El crontab queda con ambos n8n-backup y n8n-update. Usa un crontab mock en `/tmp` para no tocar el crontab real.
 
 ## Benchmark (opcional)
 
-- **`benchmark_setup_cron.sh`**: mide tiempos de la versión “original” vs la optimizada de `setup_cron`. No es un test de corrección; ejecutar solo si quieres comparar rendimiento.
+- **`benchmark_setup_cron.sh`** (en `tests/`): mide tiempos de la versión “original” vs la optimizada de `setup_cron`. No es un test de corrección; ejecutar solo si quieres comparar rendimiento.
+- **`benchmark.sh`** (en la raíz): ejecuta `setup_cron` 100 veces y muestra el tiempo total en segundos. Usa el crontab real.
 
 ## Convenciones
 

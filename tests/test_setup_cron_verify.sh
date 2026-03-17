@@ -70,6 +70,31 @@ if ! crontab -l 2>/dev/null | grep -q "n8n-backup"; then
     FAIL=1
 fi
 
+# Test 4: setup_cron_update añade n8n-update y no duplica
+crontab -r 2>/dev/null || true
+setup_cron
+setup_cron_update
+if ! crontab -l 2>/dev/null | grep -q "n8n-update"; then
+    echo "FAIL: Test 4 - debería tener entrada n8n-update"
+    FAIL=1
+fi
+setup_cron_update
+count=$(crontab -l 2>/dev/null | grep -c "n8n-update" || true)
+if [[ "${count:-0}" -gt 1 ]]; then
+    echo "FAIL: Test 4 - no debería duplicar n8n-update (count=$count)"
+    FAIL=1
+fi
+
+# Test 5: crontab debe tener ambos n8n-backup y n8n-update
+if ! crontab -l 2>/dev/null | grep -q "n8n-backup"; then
+    echo "FAIL: Test 5 - debería tener n8n-backup"
+    FAIL=1
+fi
+if ! crontab -l 2>/dev/null | grep -q "n8n-update"; then
+    echo "FAIL: Test 5 - debería tener n8n-update"
+    FAIL=1
+fi
+
 if [[ $FAIL -eq 0 ]]; then
     echo "test_setup_cron_verify: all passed"
     exit 0
